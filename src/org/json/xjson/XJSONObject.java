@@ -133,6 +133,8 @@ public class XJSONObject {
         int index = 0;
         State state = State.AC1;
         String buffer = "";
+        String prevKeyBuffer = "";
+        int prevKeyRotator = -1;
 
         while (index < query.length()) {
             char ch = query.charAt(index);
@@ -160,11 +162,39 @@ public class XJSONObject {
 
                     if (state == State.OPEN_BRACKET || state == State.DOT) {
                         // BUILD OBJ
-                        tempObj = ((JSONObject) tempObj).get(buffer);
+                        if (((JSONObject) tempObj).has(buffer)) {
+                            tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else {
+                            JSONObject childObj = new JSONObject();
+                            ((JSONObject) tempObj).put(buffer, childObj);
+                            tempObj = childObj;
+                        }
+
+                        System.out.println("prevKeyBuffer: " + prevKeyBuffer + ", keyRotator: " + prevKeyRotator);
+                        System.out.println("buffer: " + buffer);
+
+                        if (prevKeyRotator == -1 || prevKeyRotator == 1) {
+                            prevKeyBuffer = buffer;
+                            prevKeyRotator = 0;
+                        } else {
+                            prevKeyRotator = (prevKeyRotator + 1) % 2;
+                        }
+
                         buffer = "";
                     } else if (state == State.END) {
                         buffer += ch;
                         key = buffer;
+
+                        System.out.println("prevKeyBuffer: " + prevKeyBuffer + ", keyRotator: " + prevKeyRotator);
+                        System.out.println("buffer: " + buffer);
+
+                        if (prevKeyRotator == -1 || prevKeyRotator == 1) {
+                            prevKeyBuffer = buffer;
+                            prevKeyRotator = 0;
+                        } else {
+                            prevKeyRotator = (prevKeyRotator + 1) % 2;
+                        }
+
                         buffer = "";
                     } else {
                         buffer += ch;
@@ -232,5 +262,12 @@ public class XJSONObject {
 
     public String toString () {
         return jsonObject.toString();
+    }
+
+    public static void main (String args[]) {
+        XJSONObject xobj = new XJSONObject();
+        xobj.put("users.ahmed.username[0]", "ahmednr123");
+
+        System.out.println("users.ahmed.username: " + xobj.toString());
     }
 }
