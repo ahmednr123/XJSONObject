@@ -19,7 +19,7 @@ The library provides an easier way to access json elements in Java and edit them
 
 The library only interprets a query string and accesses the element within the JSONObject.
 
-### Query format
+## Query format
 
 There are two main set of operators used in the query. 
 
