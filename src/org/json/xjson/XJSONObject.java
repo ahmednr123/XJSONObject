@@ -70,7 +70,6 @@ public class XJSONObject {
 
                     if (state == State.OPEN_BRACKET || state == State.DOT) {
                         // BUILD OBJ
-                        System.out.println("BUILDING OBJECT: " + buffer);
                         tempObj = ((JSONObject) tempObj).get(buffer);
                         buffer = "";
                     } else if (state == State.END) {
@@ -85,13 +84,20 @@ public class XJSONObject {
                 case OPEN_BRACKET:
                     if (ch == ']') {
                         state = State.CLOSE_BRACKET;
+                    } else if (ch == '\\') {
+                        if (query.charAt(index+1) == ']') {
+                            buffer += ']';
+                            index++;
+                        } else {
+                            buffer += ch;
+                        }
+                        index++;
                     } else {
                         buffer += ch;
                         index++;
                     }
                     break;
                 case CLOSE_BRACKET:
-                    System.out.println("Received buffer: " + buffer);
                     try {
                         int num = Integer.parseInt(buffer);
                         tempObj = ((JSONArray) tempObj).get(num);
@@ -203,6 +209,14 @@ public class XJSONObject {
                 case OPEN_BRACKET:
                     if (ch == ']') {
                         state = State.CLOSE_BRACKET;
+                    } else if (ch == '\\') {
+                        if (query.charAt(index+1) == ']') {
+                            buffer += ']';
+                            index++;
+                        } else {
+                            buffer += ch;
+                        }
+                        index++;
                     } else {
                         buffer += ch;
                         index++;
@@ -242,6 +256,7 @@ public class XJSONObject {
                                 }
 
                                 objects.remove(objects.size() - 1);
+                                objects.add(new XObject(buffer, child));
                                 objects.add(new XObject(buffer, youngerChild));
                             } else {
                                 objects.remove(objects.size() - 1);
@@ -255,11 +270,6 @@ public class XJSONObject {
                         }
 
                     } catch (NumberFormatException e) {
-                        if (index + 1 == query.length()) {
-                            key = buffer;
-                            index++;
-                            break;
-                        }
 
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
@@ -273,6 +283,9 @@ public class XJSONObject {
                     }
 
                     if (index + 1 == query.length()) {
+                        XObject twoDownObject = objects.get(objects.size() - 2);
+                        tempObj = twoDownObject.object;
+
                         key = buffer;
                         index++;
                         break;
@@ -326,9 +339,11 @@ public class XJSONObject {
     public static void main (String args[]) {
         XJSONObject xobj = new XJSONObject();
 
-        String query = "[query][match][username][0]";
+        String query = "[asdasd\\]d]";
+        System.out.println("Query: " + query);
         xobj.put(query, "ahmednr123");
 
+        System.out.println("found: " + xobj.get(query));
         System.out.println(query + ": " + xobj.toString());
     }
 }
