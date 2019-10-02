@@ -62,7 +62,7 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        throw new XJSONException("Variable names cannot start with a number [at character: " + index + "]");
+                        throw new XJSONException("Interpret Error: Variable names cannot start with a number [at character index: " + index + "]");
                     }
                     break;
                 case SHORT_STRING:
@@ -79,7 +79,7 @@ public class XJSONObject {
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
                         } else {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         }
 
                         buffer = "";
@@ -87,13 +87,13 @@ public class XJSONObject {
                         buffer += ch;
 
                         if (tempObj instanceof JSONArray) {
-                            throw new XJSONException("Querying an Object, but found Array [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Querying an Object, but found Array [at character index: " + (index - buffer.length() + 1) + "]");
                         }
 
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
                         } else {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         }
 
                         buffer = "";
@@ -125,14 +125,14 @@ public class XJSONObject {
                         if (num < ((JSONArray) tempObj).length()) {
                             tempObj = ((JSONArray) tempObj).get(num);
                         } else {
-                            throw new XJSONException("Array Index out of bound [at character: " + index + "]");
+                            throw new XJSONException("Array Index out of bound [at character index: " + index + "]");
                         }
 
                     } catch (NumberFormatException e) {
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
                         } else {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         }
                     }
                     buffer = "";
@@ -149,14 +149,14 @@ public class XJSONObject {
                     } else if (index+1 == query.length()) {
                         state = State.END;
                     } else {
-                        throw new XJSONException("Parsing Error [at character: " + index + "]");
+                        throw new XJSONException("Interpret Error: Expected '[' or '.' [at character index: " + index + "]");
                     }
                     break;
                 case DOT:
                     if (Character.isAlphabetic(ch) || ch == '_') {
                         state = State.SHORT_STRING;
                     } else {
-                        throw new XJSONException("Parsing Error: Variable names cannot start with a number [at character: " + index + "]");
+                        throw new XJSONException("Interpret Error: Variable names cannot start with a number [at character index: " + index + "]");
                     }
                     break;
             }
@@ -196,7 +196,7 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        throw new XJSONException("Variable names cannot start with a number [at character: " + index + "]");
+                        throw new XJSONException("Interpret error: Variable names cannot start with a number [at character index: " + index + "]");
                     }
                     break;
                 case SHORT_STRING:
@@ -212,7 +212,7 @@ public class XJSONObject {
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
                         } else if (!createOnFly) {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         } else {
                             JSONObject childObj = new JSONObject();
                             ((JSONObject) tempObj).put(buffer, childObj);
@@ -254,13 +254,13 @@ public class XJSONObject {
                             if (num < ((JSONArray) tempObj).length()) {
                                 tempObj = ((JSONArray) tempObj).get(num);
                             } else {
-                                throw new XJSONException("Array Index out of bound [at character: " + (index-1) + "]");
+                                throw new XJSONException("Array Index out of bound [at character index: " + (index-1) + "]");
                             }
                         } else if (!createOnFly) {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         } else {
                             if (num != 0) {
-                                throw new XJSONException("Array Index out of bound [at character: " + (index-1) + "]");
+                                throw new XJSONException("Array Index out of bound [at character index: " + (index-1) + "]");
                             }
 
                             JSONArray child = new JSONArray();
@@ -297,7 +297,7 @@ public class XJSONObject {
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
                         } else if (!createOnFly) {
-                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character index: " + (index - buffer.length() + 1) + "]");
                         } else {
                             JSONObject childObj = new JSONObject();
                             ((JSONObject) tempObj).put(buffer, childObj);
@@ -328,14 +328,14 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        throw new XJSONException("Parsing Error [at character: " + index + "]");
+                        throw new XJSONException("Interpret Error: Expected '[' or '.' [at character index: " + index + "]");
                     }
                     break;
                 case DOT:
                     if (Character.isAlphabetic(ch) || ch == '_') {
                         state = State.SHORT_STRING;
                     } else {
-                        throw new XJSONException("Parsing Error: Variable names cannot start with a number [at character: " + index + "]");
+                        throw new XJSONException("Interpret Error: Variable names cannot start with a number [at character index: " + index + "]");
                     }
                     break;
             }
