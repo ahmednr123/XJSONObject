@@ -6,28 +6,28 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 enum State {
-    AC1, AC3, SHORT_STRING, OPEN_BRACKET, CLOSE_BRACKET, END, DOT, ERROR
+    AC1, AC3, SHORT_STRING, OPEN_BRACKET, CLOSE_BRACKET, END, DOT
 }
 public class XJSONObject {
     private boolean createOnFly;
-    Object jsonObject;
+    private Object jsonObject;
 
-    XJSONObject () {
+    public XJSONObject () {
         jsonObject = new JSONObject();
         createOnFly = false;
     }
 
-    XJSONObject (String json) {
+    public XJSONObject (String json) {
         jsonObject = new JSONObject(json);
         createOnFly = false;
     }
 
-    XJSONObject (JSONObject jsonObject) {
+    public XJSONObject (JSONObject jsonObject) {
         this.jsonObject = jsonObject;
         createOnFly = false;
     }
 
-    XJSONObject (JSONArray jsonArray) {
+    public XJSONObject (JSONArray jsonArray) {
         this.jsonObject = jsonArray;
         createOnFly = false;
     }
@@ -36,7 +36,15 @@ public class XJSONObject {
         this.createOnFly = createOnFly;
     }
 
-    Object get (String query) throws RuntimeException {
+    public void initialize(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+
+    public void initialize(JSONArray jsonArray) {
+        this.jsonObject = jsonArray;
+    }
+
+    public Object get (String query) throws XJSONException {
         Object tempObj = jsonObject;
 
         int index = 0;
@@ -54,8 +62,7 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        System.out.println("CANNOT START WITH NUMBER");
-                        state = State.ERROR;
+                        throw new XJSONException("Variable names cannot start with a number [at character: " + index + "]");
                     }
                     break;
                 case SHORT_STRING:
@@ -69,11 +76,26 @@ public class XJSONObject {
 
                     if (state == State.OPEN_BRACKET || state == State.DOT) {
                         // BUILD OBJ
-                        tempObj = ((JSONObject) tempObj).get(buffer);
+                        if (((JSONObject) tempObj).has(buffer)) {
+                            tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                        }
+
                         buffer = "";
                     } else if (state == State.END) {
                         buffer += ch;
-                        tempObj = ((JSONObject) tempObj).get(buffer);
+
+                        if (tempObj instanceof JSONArray) {
+                            throw new XJSONException("Querying an Object, but found Array [at character: " + (index - buffer.length() + 1) + "]");
+                        }
+
+                        if (((JSONObject) tempObj).has(buffer)) {
+                            tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                        }
+
                         buffer = "";
                     } else {
                         buffer += ch;
@@ -99,9 +121,19 @@ public class XJSONObject {
                 case CLOSE_BRACKET:
                     try {
                         int num = Integer.parseInt(buffer);
-                        tempObj = ((JSONArray) tempObj).get(num);
+
+                        if (num < ((JSONArray) tempObj).length()) {
+                            tempObj = ((JSONArray) tempObj).get(num);
+                        } else {
+                            throw new XJSONException("Array Index out of bound [at character: " + index + "]");
+                        }
+
                     } catch (NumberFormatException e) {
-                        tempObj = ((JSONObject) tempObj).get(buffer);
+                        if (((JSONObject) tempObj).has(buffer)) {
+                            tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
+                        }
                     }
                     buffer = "";
                     state = State.AC3;
@@ -110,45 +142,40 @@ public class XJSONObject {
                 case AC3:
                     if (ch == '.') {
                         state = State.DOT;
+                        index++;
                     } else if (ch == '[') {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else if (index+1 == query.length()) {
                         state = State.END;
                     } else {
-                        System.out.println("FROM AC3");
-                        state = State.ERROR;
+                        throw new XJSONException("Parsing Error [at character: " + index + "]");
                     }
                     break;
                 case DOT:
                     if (Character.isAlphabetic(ch) || ch == '_') {
                         state = State.SHORT_STRING;
                     } else {
-                        System.out.println("FROM DOT");
-                        state = State.ERROR;
+                        throw new XJSONException("Parsing Error: Variable names cannot start with a number [at character: " + index + "]");
                     }
                     break;
-            }
-            if (state == State.ERROR) {
-                System.out.println("WRONG QUERY");
-                throw new RuntimeException();
             }
         }
 
         return tempObj;
     }
 
-    class XObject {
-        public String objectName;
-        public Object object;
+    private static class XObject {
+        private String objectName;
+        private Object object;
 
-        public XObject (String objectName, Object object) {
+        private XObject (String objectName, Object object) {
             this.objectName = objectName;
             this.object = object;
         }
     }
 
-    void put (String query, Object obj) throws RuntimeException {
+    public void put (String query, Object obj) throws XJSONException {
         String key = null;
         Object tempObj = jsonObject;
 
@@ -169,8 +196,7 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        System.out.println("CANNOT START WITH NUMBER");
-                        state = State.ERROR;
+                        throw new XJSONException("Variable names cannot start with a number [at character: " + index + "]");
                     }
                     break;
                 case SHORT_STRING:
@@ -183,9 +209,10 @@ public class XJSONObject {
                     }
 
                     if (state == State.OPEN_BRACKET || state == State.DOT) {
-                        // BUILD OBJ
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else if (!createOnFly) {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
                         } else {
                             JSONObject childObj = new JSONObject();
                             ((JSONObject) tempObj).put(buffer, childObj);
@@ -227,15 +254,13 @@ public class XJSONObject {
                             if (num < ((JSONArray) tempObj).length()) {
                                 tempObj = ((JSONArray) tempObj).get(num);
                             } else {
-                                // ERROR
-                                System.out.println("TRYING TO ACCESS AN INDEX OUT OF BOUND!");
-                                throw new RuntimeException();
+                                throw new XJSONException("Array Index out of bound [at character: " + (index-1) + "]");
                             }
+                        } else if (!createOnFly) {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
                         } else {
                             if (num != 0) {
-                                // ERROR
-                                System.out.println("TRYING TO ACCESS AN INDEX OUT OF BOUND!");
-                                throw new RuntimeException();
+                                throw new XJSONException("Array Index out of bound [at character: " + (index-1) + "]");
                             }
 
                             JSONArray child = new JSONArray();
@@ -271,6 +296,8 @@ public class XJSONObject {
 
                         if (((JSONObject) tempObj).has(buffer)) {
                             tempObj = ((JSONObject) tempObj).get(buffer);
+                        } else if (!createOnFly) {
+                            throw new XJSONException("Object: " + buffer + " doesn't exist! [at character: " + (index - buffer.length() + 1) + "]");
                         } else {
                             JSONObject childObj = new JSONObject();
                             ((JSONObject) tempObj).put(buffer, childObj);
@@ -301,47 +328,32 @@ public class XJSONObject {
                         state = State.OPEN_BRACKET;
                         index++;
                     } else {
-                        System.out.println("FROM AC3");
-                        state = State.ERROR;
+                        throw new XJSONException("Parsing Error [at character: " + index + "]");
                     }
                     break;
                 case DOT:
                     if (Character.isAlphabetic(ch) || ch == '_') {
                         state = State.SHORT_STRING;
                     } else {
-                        System.out.println("FROM DOT");
-                        state = State.ERROR;
+                        throw new XJSONException("Parsing Error: Variable names cannot start with a number [at character: " + index + "]");
                     }
                     break;
             }
-            if (state == State.ERROR) {
-                System.out.println("WRONG QUERY");
-                throw new RuntimeException();
-            }
+        }
+
+        if (key == null) {
+            throw new XJSONException("Unexpected Error");
         }
 
         if (tempObj instanceof JSONArray) {
             int intKey = Integer.parseInt(key);
             ((JSONArray)tempObj).put(intKey, obj);
-            System.out.println("Key: " + intKey + ", Key type: Integer");
         } else if (tempObj instanceof JSONObject) {
             ((JSONObject)tempObj).put(key, obj);
-            System.out.println("Key: " + key + ", Key type: String");
         }
     }
 
     public String toString () {
         return jsonObject.toString();
-    }
-
-    public static void main (String args[]) {
-        XJSONObject xobj = new XJSONObject();
-
-        String query = "[asdasd\\]d]";
-        System.out.println("Query: " + query);
-        xobj.put(query, "ahmednr123");
-
-        System.out.println("found: " + xobj.get(query));
-        System.out.println(query + ": " + xobj.toString());
     }
 }
