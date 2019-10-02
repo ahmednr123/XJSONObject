@@ -133,8 +133,6 @@ public class XJSONObject {
         int index = 0;
         State state = State.AC1;
         String buffer = "";
-        String prevKeyBuffer = "";
-        int prevKeyRotator = -1;
 
         while (index < query.length()) {
             char ch = query.charAt(index);
@@ -170,30 +168,10 @@ public class XJSONObject {
                             tempObj = childObj;
                         }
 
-                        System.out.println("prevKeyBuffer: " + prevKeyBuffer + ", keyRotator: " + prevKeyRotator);
-                        System.out.println("buffer: " + buffer);
-
-                        if (prevKeyRotator == -1 || prevKeyRotator == 1) {
-                            prevKeyBuffer = buffer;
-                            prevKeyRotator = 0;
-                        } else {
-                            prevKeyRotator = (prevKeyRotator + 1) % 2;
-                        }
-
                         buffer = "";
                     } else if (state == State.END) {
                         buffer += ch;
                         key = buffer;
-
-                        System.out.println("prevKeyBuffer: " + prevKeyBuffer + ", keyRotator: " + prevKeyRotator);
-                        System.out.println("buffer: " + buffer);
-
-                        if (prevKeyRotator == -1 || prevKeyRotator == 1) {
-                            prevKeyBuffer = buffer;
-                            prevKeyRotator = 0;
-                        } else {
-                            prevKeyRotator = (prevKeyRotator + 1) % 2;
-                        }
 
                         buffer = "";
                     } else {
