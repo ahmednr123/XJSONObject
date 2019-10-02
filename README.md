@@ -59,6 +59,11 @@ xobj.get("[\\]]");             // To access the key: "]"
 ```
 
 ## Using the library
+```java
+import org.json.xjson.XJSONObject;
+import org.json.xjson.XJSONException;
+```
+
 #### Constructors:
 ```java
 XJSONObect()
